@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Campus</title>
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #f3f6fc; color: #1e293b; }
+a { color: #2563eb; text-decoration: none; cursor: pointer; }
+a:hover { text-decoration: underline; }
+[hidden] { display: none !important; }
+
+.topbar { background: #172554; color: white; padding: 18px 4%; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.topbar h2 { margin: 0 0 5px; }
+.topbar small { color: #cbd5e1; }
+.topbar .logout { display: inline-block; color: white; margin-left: 16px; padding: 9px 14px; border: 1px solid #94a3b8; border-radius: 7px; }
+
+.container { width: min(1200px, 94%); margin: 30px auto; }
+.container > h1 { margin-bottom: 8px; }
+
+.auth-card { background: white; width: min(430px, 92%); margin: 65px auto; padding: 30px; border-radius: 15px; box-shadow: 0 8px 35px rgba(15, 23, 42, 0.09); }
+.auth-card.wide { width: min(650px, 94%); margin: 35px auto; }
+.auth-card h1 { color: #172554; margin-top: 0; }
+.auth-card > p { color: #64748b; }
+
+label { display: block; margin: 15px 0 7px; font-weight: 600; font-size: 14px; }
+input, select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; background: white; color: #1e293b; }
+input:focus, select:focus, textarea:focus { outline: 2px solid #93c5fd; border-color: #2563eb; }
+textarea { resize: vertical; }
+
+button, .button-link { display: inline-block; padding: 11px 16px; border: none; border-radius: 7px; background: #2563eb; color: white; font: inherit; cursor: pointer; text-align: center; }
+button:hover, .button-link:hover { background: #1d4ed8; text-decoration: none; }
+button:focus-visible, a:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; }
+.auth-card form > button { width: 100%; margin: 20px 0 12px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 25px 0; }
+.stat-card, .panel { background: white; padding: 22px; border-radius: 12px; box-shadow: 0 3px 15px rgba(15, 23, 42, 0.05); }
+.stat-card span { color: #64748b; font-size: 14px; }
+.stat-card h2 { color: #1d4ed8; font-size: 30px; margin: 12px 0 0; }
+.panel { margin-top: 25px; }
+
+.table-wrapper { width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 750px; }
+th, td { padding: 13px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: middle; }
+th { background: #f8fafc; color: #475569; font-size: 13px; }
+td strong { display: inline-block; margin: 5px 0; }
+td small { color: #64748b; }
+td form { min-width: 130px; }
+td form button { width: 100%; margin-top: 5px; }
+
+.status { display: inline-block; padding: 6px 9px; background: #e0e7ff; color: #3730a3; border-radius: 20px; font-size: 12px; white-space: nowrap; }
+.status.Resolved, .status.Closed { background: #dcfce7; color: #166534; }
+.status.In-Progress { background: #fef3c7; color: #92400e; }
+.error { background: #fee2e2; color: #991b1b !important; padding: 12px; border-radius: 7px; }
+.success { background: #dcfce7; color: #166534 !important; padding: 12px; border-radius: 7px; }
+
+.demo { margin-top: 18px; padding: 12px; background: #f8fafc; border-radius: 7px; font-size: 13px; color: #475569; line-height: 1.7; }
+.demo a { font-weight: 600; }
+
+@media (max-width: 850px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 500px) {
+  .stats { grid-template-columns: 1fr; }
+  .topbar { align-items: flex-start; }
+  .auth-card { padding: 22px; margin: 30px auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN (login.php) ============ -->
+<div id="view-login" class="auth-card">
+  <h1>Smart Campus</h1>
+  <p>Campus Issue Management System</p>
+  <p class="success" id="login-ok" hidden>Registration successful. Please log in.</p>
+  <p class="error" id="login-err" hidden></p>
+  <form id="form-login">
+    <label for="l-email">Email</label>
+    <input id="l-email" type="email" name="email" required>
+    <label for="l-pass">Password</label>
+    <input id="l-pass" type="password" name="password" required>
+    <button type="submit">Login</button>
+  </form>
+  <p>New student? <a data-go="register">Create account</a></p>
+  <div class="demo">
+    Demo accounts (preview only):<br>
+    <a data-fill="admin@campus.local|Admin@123">Admin</a> ·
+    <a data-fill="staff@campus.local|Staff@1234">Staff</a> ·
+    <a data-fill="student@campus.local|Student@123">Student</a>
+  </div>
+</div>
+
+<!-- ============ REGISTER (register.php) ============ -->
+<div id="view-register" class="auth-card" hidden>
+  <h1>Join Smart Campus</h1>
+  <p>Create your student account</p>
+  <p class="error" id="reg-err" hidden></p>
+  <form id="form-register">
+    <label for="r-name">Full Name</label>
+    <input id="r-name" name="name" required maxlength="100">
+    <label for="r-email">Email</label>
+    <input id="r-email" type="email" name="email" required maxlength="150">
+    <label for="r-dept">Department</label>
+    <input id="r-dept" name="department" required maxlength="100">
+    <label for="r-pass">Password (minimum 8 characters)</label>
+    <input id="r-pass" type="password" name="password" minlength="8" required>
+    <button type="submit">Register</button>
+  </form>
+  <p>Already registered? <a data-go="login">Login</a></p>
+</div>
+
+<!-- ============ DASHBOARD (dashboard.php) ============ -->
+<div id="view-dashboard" hidden>
+  <header class="topbar">
+    <div>
+      <h2>Smart Campus</h2>
+      <small>Issue Management System</small>
+    </div>
+    <div>
+      <span id="who"></span>
+      <a class="logout" id="logout" role="button" tabindex="0">Logout</a>
+    </div>
+  </header>
+  <main class="container">
+    <h1 id="welcome"></h1>
+    <p>Manage and track campus issues from your dashboard.</p>
+    <p class="success" id="flash" hidden></p>
+    <a class="button-link" id="new-issue" data-go="submit" hidden>+ Report New Issue</a>
+
+    <section class="stats">
+      <div class="stat-card"><span>Total Issues</span><h2 id="s-total">0</h2></div>
+      <div class="stat-card"><span>Open / Assigned</span><h2 id="s-open">0</h2></div>
+      <div class="stat-card"><span>In Progress</span><h2 id="s-prog">0</h2></div>
+      <div class="stat-card"><span>Resolved / Closed</span><h2 id="s-done">0</h2></div>
+    </section>
+
+    <section class="panel">
+      <h2 id="panel-title"></h2>
+      <p id="empty" hidden>No issues found.</p>
+      <div class="table-wrapper" id="table-wrap">
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ============ REPORT ISSUE (submit_issue.php) ============ -->
+<main id="view-submit" class="auth-card wide" hidden>
+  <h1>Report a Campus Issue</h1>
+  <p>Give the campus team enough detail to fix the problem.</p>
+  <p class="error" id="sub-err" hidden></p>
+  <form id="form-submit">
+    <label for="i-title">Issue Title</label>
+    <input id="i-title" name="title" maxlength="150" required>
+
+    <label for="i-cat">Category</label>
+    <select id="i-cat" name="category_id" required>
+      <option value="">Choose a category</option>
+      <option>Cleanliness</option>
+      <option>Electrical</option>
+      <option>Equipment</option>
+      <option>Infrastructure</option>
+      <option>Network</option>
+    </select>
+
+    <label for="i-loc">Campus Location / Block</label>
+    <input id="i-loc" name="location" maxlength="200" required placeholder="Example: Block A, Room 204">
+
+    <label for="i-pri">Priority</label>
+    <select id="i-pri" name="priority" required>
+      <option>Low</option>
+      <option selected>Medium</option>
+      <option>High</option>
+      <option>Critical</option>
+    </select>
+
+    <label for="i-desc">Issue Description</label>
+    <textarea id="i-desc" name="description" rows="5" maxlength="10000" required placeholder="Describe the problem..."></textarea>
+
+    <button type="submit">Submit Issue</button>
+    <a data-go="dashboard">Back to Dashboard</a>
+  </form>
+</main>
+
+<script>
+/*
+  Preview data lives in memory and resets on reload.
+  To connect to the PHP backend, point each form at its PHP file
+  (login.php, register.php, submit_issue.php, update_issue.php) —
+  the field names below match what those scripts read from $_POST.
+*/
+const users = [
+  { id: 1, name: 'Campus Administrator', email: 'admin@campus.local',   password: 'Admin@123',    role: 'admin',   department: 'Administration' },
+  { id: 2, name: 'Ravi Kumar',           email: 'staff@campus.local',   password: 'Staff@1234',   role: 'staff',   department: 'Maintenance' },
+  { id: 3, name: 'Asha Menon',           email: 'student@campus.local', password: 'Student@123',  role: 'student', department: 'Computer Science' }
+];
+const issues = [
+  { id: 1, title: 'Projector not working', location: 'Block A, Room 204', category: 'Equipment', priority: 'High',   status: 'Assigned',    reportedBy: 3, assignedTo: 2 },
+  { id: 2, title: 'Wi-Fi drops in library', location: 'Library, 2nd floor', category: 'Network',   priority: 'Medium', status: 'Open',        reportedBy: 3, assignedTo: null },
+  { id: 3, title: 'Broken light in corridor', location: 'Block C, Ground floor', category: 'Electrical', priority: 'Low', status: 'Resolved', reportedBy: 3, assignedTo: 2 }
+];
+let me = null, nextIssueId = 4, nextUserId = 4;
+
+const $ = id => document.getElementById(id);
+const views = ['login', 'register', 'dashboard', 'submit'];
+
+function show(name) {
+  views.forEach(v => $('view-' + v).hidden = v !== name);
+  if (name === 'dashboard') renderDashboard();
+  window.scrollTo(0, 0);
+}
+function msg(el, text) { el.textContent = text; el.hidden = !text; }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+const userName = id => (users.find(u => u.id === id) || {}).name || '—';
+
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go) { e.preventDefault(); msg($('login-err'), ''); show(go.dataset.go); }
+  const fill = e.target.closest('[data-fill]');
+  if (fill) { const [em, pw] = fill.dataset.fill.split('|'); $('l-email').value = em; $('l-pass').value = pw; }
+});
+
+$('form-login').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('l-email').value.trim(), pass = $('l-pass').value;
+  const u = users.find(x => x.email.toLowerCase() === email.toLowerCase() && x.password === pass);
+  if (!u) { $('login-ok').hidden = true; return msg($('login-err'), 'Invalid email or password.'); }
+  me = u; msg($('login-err'), ''); $('login-ok').hidden = true; e.target.reset();
+  flash(''); show('dashboard');
+});
+
+$('form-register').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  const name = f.get('name').trim(), email = f.get('email').trim(), pw = f.get('password');
+  if (!name || pw.length < 8) return msg($('reg-err'), 'Enter valid details. Password must have at least 8 characters.');
+  if (users.some(u => u.email.toLowerCase() === email.toLowerCase())) return msg($('reg-err'), 'This email is already registered.');
+  users.push({ id: nextUserId++, name, email, password: pw, role: 'student', department: f.get('department').trim() });
+  msg($('reg-err'), ''); e.target.reset();
+  show('login'); $('login-ok').hidden = false;
+});
+
+$('form-submit').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = new FormData(e.target);
+  if (!f.get('title').trim() || !f.get('category_id') || !f.get('location').trim() || !f.get('description').trim())
+    return msg($('sub-err'), 'Please enter valid issue details.');
+  issues.unshift({
+    id: nextIssueId++, title: f.get('title').trim(), location: f.get('location').trim(),
+    category: f.get('category_id'), priority: f.get('priority'), status: 'Open',
+    reportedBy: me.id, assignedTo: null
+  });
+  msg($('sub-err'), ''); e.target.reset(); flash('Issue submitted.'); show('dashboard');
+});
+
+function logout() { me = null; show('login'); }
+$('logout').addEventListener('click', logout);
+$('logout').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); logout(); } });
+
+function flash(text) { msg($('flash'), text); }
+
+function renderDashboard() {
+  const role = me.role;
+  $('who').textContent = me.name + ' · ' + role[0].toUpperCase() + role.slice(1);
+  $('welcome').textContent = 'Welcome, ' + me.name + '!';
+  $('new-issue').hidden = role !== 'student';
+  $('panel-title').textContent = role === 'admin' ? 'All Campus Issues' : 'Your Issues';
+
+  const list = issues.filter(i =>
+    role === 'admin' ? true : role === 'student' ? i.reportedBy === me.id : i.assignedTo === me.id);
+
+  const n = s => list.filter(i => s.includes(i.status)).length;
+  $('s-total').textContent = list.length;
+  $('s-open').textContent = role === 'admin' ? n(['Open']) : n(['Open', 'Assigned']);
+  $('s-prog').textContent = n(['In Progress']);
+  $('s-done').textContent = role === 'admin' ? n(['Resolved']) : n(['Resolved', 'Closed']);
+
+  $('empty').hidden = list.length > 0;
+  $('table-wrap').hidden = list.length === 0;
+
+  $('thead').innerHTML = '<tr><th>ID / Issue</th>' +
+    (role === 'admin' ? '<th>Reported By</th>' : '') +
+    '<th>Category</th><th>Priority</th><th>Status</th>' +
+    (role === 'admin' ? '<th>Assign Staff</th>' : '') +
+    (role === 'staff' ? '<th>Update Status</th>' : '') + '</tr>';
+
+  const staff = users.filter(u => u.role === 'staff');
+  $('tbody').innerHTML = list.map(i => {
+    let row = `<tr><td>#${i.id}<br><strong>${esc(i.title)}</strong><br><small>${esc(i.location)}</small></td>`;
+    if (role === 'admin') row += `<td>${esc(userName(i.reportedBy))}</td>`;
+    row += `<td>${esc(i.category)}</td><td>${esc(i.priority)}</td>`;
+    row += `<td><span class="status ${i.status.replace(' ', '-')}">${esc(i.status)}</span></td>`;
+    if (role === 'admin') {
+      row += `<td><form data-assign="${i.id}"><select name="staff_id" required aria-label="Assign staff for issue ${i.id}">
+        <option value="">Select staff</option>` +
+        staff.map(s => `<option value="${s.id}" ${i.assignedTo === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('') +
+        `</select><button type="submit">Assign</button></form></td>`;
+    }
+    if (role === 'staff') {
+      row += `<td><form data-status="${i.id}"><select name="status" required aria-label="Status for issue ${i.id}">` +
+        ['Assigned', 'In Progress', 'Resolved'].map(s => `<option ${i.status === s ? 'selected' : ''}>${s}</option>`).join('') +
+        `</select><button type="submit">Update</button></form></td>`;
+    }
+    return row + '</tr>';
+  }).join('');
+}
+
+// Assign (admin) and status update (staff) — same rules as update_issue.php
+$('tbody').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, fd = new FormData(f);
+  if (f.dataset.assign) {
+    const i = issues.find(x => x.id === +f.dataset.assign);
+    i.assignedTo = +fd.get('staff_id');
+    if (i.status === 'Open') i.status = 'Assigned';
+    flash('Issue #' + i.id + ' assigned.');
+  } else if (f.dataset.status) {
+    const i = issues.find(x => x.id === +f.dataset.status);
+    const allowed = { 'Assigned': ['In Progress'], 'In Progress': ['Resolved'], 'Resolved': [] };
+    const next = fd.get('status');
+    if (!(allowed[i.status] || []).includes(next)) {
+      flash(''); alert('Invalid status transition: ' + i.status + ' → ' + next);
+      return;
+    }
+    i.status = next;
+    flash('Issue #' + i.id + ' is now ' + next + '.');
+  }
+  renderDashboard();
+});
+</script>
+</body>
+</html>
